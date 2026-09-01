@@ -9,7 +9,15 @@ async function fetchJSON(url, options) {
   }
   return res.json();
 }
-
+async function resolverVanityUrl(vanity) {
+  const data = await fetchJSON(
+    `https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key=${process.env.STEAM_API_KEY}&vanityurl=${encodeURIComponent(vanity)}`
+  );
+  if (data.response?.success === 1) {
+    return data.response.steamid;
+  }
+  return null;
+}
 async function syncJugador(steamId64) {
   const fechaSnapshot = new Date();
 
@@ -62,6 +70,8 @@ async function syncJugador(steamId64) {
 
   let faceitPlayerId = null, faceitNickname = null, faceitNivel = null, faceitElo = null, winrateFaceit = null;
   let kdFaceit = null, hsPctFaceit = null, matchesFaceit = null;
+  let avatarUrl = null, rachaActual = null, mejorRacha = null, mvpsPromedio = null, mejorMapa = null, rankingPais = null;
+  let paisFaceit = null;
 
   const faceitRes = await fetch(
     `https://open.faceit.com/data/v4/players?game=cs2&game_player_id=${steamId64}`,
@@ -73,18 +83,60 @@ async function syncJugador(steamId64) {
     faceitPlayerId = faceitData.player_id;
     faceitNickname = faceitData.nickname;
     faceitNivel = faceitData.games.cs2.skill_level;
+    avatarUrl = faceitData.avatar || null;
     faceitElo = faceitData.games.cs2.faceit_elo;
+    paisFaceit = faceitData.country || null;
 
     const faceitStatsRes = await fetch(
       `https://open.faceit.com/data/v4/players/${faceitPlayerId}/stats/cs2`,
       { headers: { Authorization: `Bearer ${process.env.FACEIT_API_KEY}` } }
     );
+
     if (faceitStatsRes.ok) {
       const faceitStatsData = await faceitStatsRes.json();
       winrateFaceit = faceitStatsData.lifetime['Win Rate %'];
       kdFaceit = faceitStatsData.lifetime['Average K/D Ratio'];
       hsPctFaceit = faceitStatsData.lifetime['Average Headshots %'];
       matchesFaceit = faceitStatsData.lifetime['Matches'];
+      rachaActual = faceitStatsData.lifetime['Current Win Streak'] ?? null;
+      mejorRacha = faceitStatsData.lifetime['Longest Win Streak'] ?? null;
+
+      const mapas = (faceitStatsData.segments || []).filter(s => s.type === 'Map');
+
+      const totalMvps = mapas.reduce((sum, m) => sum + (parseFloat(m.stats['MVPs']) || 0), 0);
+      const totalPartidas = parseFloat(matchesFaceit) || 0;
+      mvpsPromedio = totalPartidas > 0 ? (totalMvps / totalPartidas).toFixed(2) : null;
+
+      // Mejor mapa: solo entran los mapas con al menos 3 partidas jugadas.
+      // Desempate por winrate, y si hay empate en winrate, por K/D Ratio.
+      const MIN_PARTIDAS_POR_MAPA = 3;
+      const mapasElegibles = mapas.filter(m => (parseFloat(m.stats['Matches']) || 0) >= MIN_PARTIDAS_POR_MAPA);
+
+      if (mapasElegibles.length > 0) {
+        const mejor = mapasElegibles.reduce((max, m) => {
+          const wr = parseFloat(m.stats['Win Rate %']) || 0;
+          const wrMax = parseFloat(max.stats['Win Rate %']) || 0;
+          if (wr !== wrMax) return wr > wrMax ? m : max;
+
+          const kdMapa = parseFloat(m.stats['Average K/D Ratio']) || 0;
+          const kdMax = parseFloat(max.stats['Average K/D Ratio']) || 0;
+          return kdMapa > kdMax ? m : max;
+        });
+        mejorMapa = mejor.label ?? null;
+      }
+    }
+
+    const region = faceitData.games.cs2.region;
+    const country = faceitData.country;
+    if (region && country) {
+      const rankingRes = await fetch(
+        `https://open.faceit.com/data/v4/rankings/games/cs2/regions/${region}/players/${faceitPlayerId}?country=${country}`,
+        { headers: { Authorization: `Bearer ${process.env.FACEIT_API_KEY}` } }
+      );
+      if (rankingRes.ok) {
+        const rankingData = await rankingRes.json();
+        rankingPais = rankingData.position ?? null;
+      }
     }
   }
 
@@ -104,9 +156,9 @@ async function syncJugador(steamId64) {
   const jugadorId = jugadorResult.rows[0].id;
 
   await pool.query(
-    `INSERT INTO historial_stats (jugador_id, fecha_snapshot, faceit_nivel, faceit_elo, kd, hs_pct, winrate, winrate_steam, horas_jugadas, vac_ban, game_ban_count, kd_faceit, hs_pct_faceit, matches_faceit)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-    [jugadorId, fechaSnapshot, faceitNivel, faceitElo, kd, hsPct, winrateFaceit, winrateSteam, horasJugadas, bans.VACBanned, bans.NumberOfGameBans, kdFaceit, hsPctFaceit, matchesFaceit]
+    `INSERT INTO historial_stats (jugador_id, fecha_snapshot, faceit_nivel, faceit_elo, kd, hs_pct, winrate, winrate_steam, horas_jugadas, vac_ban, game_ban_count, kd_faceit, hs_pct_faceit, matches_faceit, racha_actual, mejor_racha, mvps_promedio, ranking_pais, mejor_mapa, avatar_url, pais_faceit)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
+    [jugadorId, fechaSnapshot, faceitNivel, faceitElo, kd, hsPct, winrateFaceit, winrateSteam, horasJugadas, bans.VACBanned, bans.NumberOfGameBans, kdFaceit, hsPctFaceit, matchesFaceit, rachaActual, mejorRacha, mvpsPromedio, rankingPais, mejorMapa, avatarUrl, paisFaceit]
   );
 
   for (const a of armas) {
@@ -119,4 +171,21 @@ async function syncJugador(steamId64) {
   return { jugadorId, nombre: steamPlayer.personaname };
 }
 
-module.exports = { syncJugador };
+async function syncTodosLosJugadores() {
+  const result = await pool.query('SELECT steam_id64, steam_display_name FROM jugadores WHERE activo = true');
+  console.log(`[Sync automático] Arrancando sync de ${result.rows.length} jugador(es)...`);
+
+  for (const jugador of result.rows) {
+    try {
+      await syncJugador(jugador.steam_id64);
+      console.log(`[Sync automático] OK: ${jugador.steam_display_name}`);
+    } catch (err) {
+      console.error(`[Sync automático] Falló ${jugador.steam_display_name}: ${err.message}`);
+    }
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+
+  console.log('[Sync automático] Terminado.');
+}
+
+module.exports = { syncJugador, resolverVanityUrl, syncTodosLosJugadores };

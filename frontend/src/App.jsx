@@ -1,11 +1,112 @@
 import { useState, useEffect } from 'react';
+import { Gamepad2, Flame } from 'lucide-react';
 import './App.css';
+
+function calcularEstiloJuego(horas, nivel) {
+  if (!horas || !nivel) return null;
+  const horasPorNivel = horas / nivel;
+  if (horasPorNivel > 100) return 'Grindeador';
+  if (horasPorNivel < 40) return 'Eficiente';
+  return 'Casual';
+}
+
+function codigoPaisNormalizado(codigoPais) {
+  if (!codigoPais || codigoPais.length !== 2) return null;
+  return codigoPais.toLowerCase();
+}
+
+function extraerSteamId(input) {
+  const texto = input.trim();
+  const matchUrl = texto.match(/profiles\/(\d{17})/);
+  if (matchUrl) return matchUrl[1];
+  if (/^\d{17}$/.test(texto)) return texto;
+  return null;
+}
+
+function extraerVanityUrl(input) {
+  const texto = input.trim();
+  const matchUrl = texto.match(/\/id\/([^/]+)/);
+  if (matchUrl) return matchUrl[1];
+  return null;
+}
+
+function ModalPrivacidad({ onAceptar }) {
+  return (
+    <div className="overlay-modal">
+      <div className="modal-privacidad">
+        <h2>Antes de continuar</h2>
+
+        <h3>¿Qué es CS2database?</h3>
+        <p>
+          Un proyecto independiente, sin fines comerciales, armado para uso interno de este grupo.
+        </p>
+
+        <h3>¿Qué datos usa?</h3>
+        <p>
+          Únicamente información pública que las APIs oficiales de FACEIT y Steam devuelven a partir
+          del perfil que vos mismo vinculás: nivel y ELO de FACEIT, estadísticas de tus partidas de
+          CS2 (K/D, HS%, winrate), historial de bans (VAC/FACEIT), horas jugadas y tu nickname actual.
+        </p>
+
+        <h3>¿Qué pasa si tengo el perfil de Steam en privado?</h3>
+        <p>
+          Igual quedás dado de alta con lo que FACEIT sí puede exponer. Las estadísticas de juego de
+          Steam (K/D, HS%, winrate, armas) van a mostrarse como "N/D" hasta que hagas público tu
+          perfil — no se intenta obtener ese dato por otra vía.
+        </p>
+
+        <h3>¿Qué NO usa?</h3>
+        <p>
+          No pedimos ni accedemos a tu mail, contraseña, ni ningún dato de tu cuenta. Lo único que
+          necesitamos es tu nickname de FACEIT o el link de tu perfil de Steam — el mismo que
+          cualquiera puede ver entrando a tu perfil público.
+        </p>
+
+        <h3>¿Para qué se usa?</h3>
+        <p>
+          Los datos se usan para armar comparaciones y evaluaciones dentro del grupo. No se comparten
+          ni se venden a terceros, ni se usan con fines comerciales.
+        </p>
+
+        <h3>¿Cómo se actualiza?</h3>
+        <p>
+          Periódicamente, directo desde las APIs oficiales de FACEIT y Steam. No se modifica ni se
+          completa con información de otras fuentes.
+        </p>
+
+        <h3>¿Me puedo bajar?</h3>
+        <p>Cuando quieras. Pedímelo directamente y se elimina tu perfil de la base.</p>
+
+        <hr />
+
+        <p className="texto-confirmacion">Al continuar, confirmás que estás de acuerdo con lo anterior.</p>
+
+        <button className="boton-aceptar" onClick={onAceptar}>Acepto y continúo</button>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const [jugadores, setJugadores] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [inputUrl, setInputUrl] = useState('');
+  const [agregando, setAgregando] = useState(false);
+  const [errorAlta, setErrorAlta] = useState(null);
 
   useEffect(() => {
+    const yaAcepto = localStorage.getItem('cs2database_privacidad_aceptada');
+    if (!yaAcepto) setMostrarModal(true);
+  }, []);
+
+  const handleAceptarModal = () => {
+    localStorage.setItem('cs2database_privacidad_aceptada', 'true');
+    setMostrarModal(false);
+  };
+
+  const cargarJugadores = () => {
+    setCargando(true);
     fetch('http://localhost:3001/api/jugadores')
       .then(res => res.json())
       .then(data => {
@@ -16,47 +117,155 @@ function App() {
         console.error('Error cargando jugadores:', err);
         setCargando(false);
       });
+  };
+
+  useEffect(() => {
+    cargarJugadores();
   }, []);
 
-  if (cargando) return <p>Cargando jugadores...</p>;
+  const handleAgregarJugador = async (e) => {
+    e.preventDefault();
+    setErrorAlta(null);
+
+    const steamId64 = extraerSteamId(inputUrl);
+    const vanityUrl = !steamId64 ? extraerVanityUrl(inputUrl) : null;
+
+    if (!steamId64 && !vanityUrl) {
+      setErrorAlta('No pude reconocer un perfil de Steam válido en eso que pegaste.');
+      return;
+    }
+
+    setAgregando(true);
+    try {
+      const res = await fetch('http://localhost:3001/api/jugadores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(steamId64 ? { steamId64 } : { vanityUrl }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al agregar el jugador');
+
+      setInputUrl('');
+      cargarJugadores();
+    } catch (err) {
+      setErrorAlta(err.message);
+    } finally {
+      setAgregando(false);
+    }
+  };
 
   return (
-    <div>
+    <div className="pagina">
+      {mostrarModal && <ModalPrivacidad onAceptar={handleAceptarModal} />}
+
       <h1>CS2database</h1>
-      <div className="lista-jugadores">
-        {jugadores.map(j => (
-          <div key={j.id} className="tarjeta-jugador">
-            <h2>{j.steam_display_name}</h2>
-            <p>
-              STEAM {j.steam_perfil_publico ? '✓' : '◐'} &nbsp;
-              FACEIT {j.faceit_player_id ? '✓' : '✗'}
-            </p>
 
-            <div className="bloque-steam">
-              <h3>Steam</h3>
-              <p>KD: {j.kd ?? 'N/D'} | HS%: {j.hs_pct ? `${j.hs_pct}%` : 'N/D'}</p>
-              <p>Winrate: {j.winrate_steam ? `${j.winrate_steam}%` : 'N/D'}</p>
-              <p>Horas jugadas: {j.horas_jugadas ?? 'N/D'}</p>
-              <p>Bans: {j.vac_ban ? 'VAC ban' : 'Ninguno'}</p>
-              {j.fecha_creacion_steam && (
-                <p>Cuenta creada: {new Date(j.fecha_creacion_steam).toLocaleDateString('es-AR')}</p>
-              )}
-              {j.ultima_conexion_steam && (
-                <p>Última conexión: {new Date(j.ultima_conexion_steam).toLocaleDateString('es-AR')}</p>
-              )}
-            </div>
-
-            {j.faceit_player_id && (
-              <div className="bloque-faceit">
-                <h3>FACEIT</h3>
-                <p>Nivel {j.faceit_nivel} | {j.faceit_elo} ELO</p>
-                <p>KD: {j.kd_faceit ?? 'N/D'} | HS%: {j.hs_pct_faceit ? `${j.hs_pct_faceit}%` : 'N/D'}</p>
-                <p>Winrate: {j.winrate ? `${j.winrate}%` : 'N/D'} ({j.matches_faceit ?? '?'} partidas)</p>
-              </div>
-            )}
-          </div>
-        ))}
+      <div className="bloque-legal">
+        <button className="link-legal" onClick={() => setMostrarModal(true)}>
+          Ver política de privacidad
+        </button>
       </div>
+
+      <form className="form-agregar" onSubmit={handleAgregarJugador}>
+        <input
+          type="text"
+          placeholder="Pegá la URL del perfil de Steam o el SteamID64"
+          value={inputUrl}
+          onChange={(e) => setInputUrl(e.target.value)}
+        />
+        <button type="submit" disabled={!inputUrl || agregando}>
+          {agregando ? 'Agregando...' : 'Agregar jugador'}
+        </button>
+        {errorAlta && <p className="error-alta">{errorAlta}</p>}
+      </form>
+
+      {cargando ? (
+        <p className="cargando">Cargando jugadores...</p>
+      ) : (
+        <div className="lista-jugadores">
+          {jugadores.map(j => {
+            const estiloJuego = calcularEstiloJuego(j.horas_jugadas, j.faceit_nivel);
+
+            return (
+              <div key={j.id} className="tarjeta-jugador">
+                <div className="header-jugador">
+                  {j.avatar_url && (
+                    <img src={j.avatar_url} alt={j.faceit_nickname || j.steam_display_name} className="avatar-jugador" />
+                  )}
+                  <div>
+                    <h2>{j.steam_display_name}</h2>
+                    <p className="estado-plataformas">
+                      STEAM {j.steam_perfil_publico ? '✓' : '◐'} &nbsp;
+                      FACEIT {j.faceit_player_id ? '✓' : '✗'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="stats-grid">
+                  <div className="bloque-steam">
+                    <h3>
+                      <Gamepad2 size={16} className="icono-titulo icono-steam" />
+                      Steam
+                    </h3>
+                    <p>KD: {j.kd ?? 'N/D'} | HS%: {j.hs_pct ? `${j.hs_pct}%` : 'N/D'}</p>
+                    <p>Winrate: {j.winrate_steam ? `${j.winrate_steam}%` : 'N/D'}</p>
+                    <p>Horas jugadas: {j.horas_jugadas ?? 'N/D'}</p>
+                    <p>Bans: {j.vac_ban ? 'VAC ban' : 'Ninguno'}</p>
+                    {j.fecha_creacion_steam && (
+                      <p>Cuenta creada: {new Date(j.fecha_creacion_steam).toLocaleDateString('es-AR')}</p>
+                    )}
+                    {j.ultima_conexion_steam && (
+                      <p>Última conexión: {new Date(j.ultima_conexion_steam).toLocaleDateString('es-AR')}</p>
+                    )}
+                  </div>
+
+                  {j.faceit_player_id && (
+                    <div className="bloque-faceit">
+                      <h3>
+                        <Flame size={16} className="icono-titulo icono-faceit" />
+                        FACEIT
+                      </h3>
+
+                      <div className="badges-faceit">
+                        <span className="badge">Nivel {j.faceit_nivel} · {j.faceit_elo} ELO</span>
+                        {j.ranking_pais > 0 && (
+                          <span className="badge badge-pais">
+                            {codigoPaisNormalizado(j.pais_faceit) && (
+                              <span className={`fi fi-${codigoPaisNormalizado(j.pais_faceit)}`}></span>
+                            )}
+                            {j.pais_faceit?.toUpperCase()} · #{j.ranking_pais}
+                          </span>
+                        )}
+                        {j.racha_actual > 0 && <span className="badge badge-racha">🔥 {j.racha_actual} seguidas</span>}
+                        {j.mejor_racha > 0 && <span className="badge">Racha máx: {j.mejor_racha}</span>}
+                        {estiloJuego && (
+                          <span
+                            className="badge badge-estilo"
+                            title="Calculado cruzando horas jugadas en Steam vs nivel de FACEIT"
+                          >
+                            Estilo: {estiloJuego}
+                          </span>
+                        )}
+                      </div>
+
+                      <p>KD: {j.kd_faceit ?? 'N/D'} | HS%: {j.hs_pct_faceit ? `${j.hs_pct_faceit}%` : 'N/D'}</p>
+                      <p>Winrate: {j.winrate ? `${j.winrate}%` : 'N/D'} ({j.matches_faceit ?? '?'} partidas)</p>
+                      {j.mvps_promedio && <p>MVPs promedio: {j.mvps_promedio} por partida</p>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <footer className="footer-pagina">
+        <p>© {new Date().getFullYear()} Esteban Sarlengo · Todos los derechos reservados</p>
+        <p className="footer-nota">
+          Proyecto en mejora continua · Próximamente: buscador de grupo y armador de lobbys
+        </p>
+      </footer>
     </div>
   );
 }

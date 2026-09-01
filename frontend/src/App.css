@@ -1,184 +1,425 @@
-.counter {
-  font-size: 16px;
-  padding: 5px 10px;
-  border-radius: 5px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #050505;
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.4) 60%, rgba(0, 0, 0, 0.7) 100%),
+    url('/images/bg-warzone.jpg');
+  background-size: 100% auto;
+  background-position: center top;
+  background-repeat: no-repeat;
+}
+
+.pagina {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 20px;
+  min-height: 100vh;
+}
+
+.pagina h1 {
+  text-align: center;
   margin-bottom: 24px;
-
-  &:hover {
-    border-color: var(--accent-border);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #e8e8e8;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
 }
 
-.hero {
-  position: relative;
-
-  .base,
-  .framework,
-  .vite {
-    inset-inline: 0;
-    margin: 0 auto;
-  }
-
-  .base {
-    width: 170px;
-    position: relative;
-    z-index: 0;
-  }
-
-  .framework,
-  .vite {
-    position: absolute;
-  }
-
-  .framework {
-    z-index: 1;
-    top: 34px;
-    height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
-  }
-
-  .vite {
-    z-index: 0;
-    top: 107px;
-    height: 26px;
-    width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
-  }
+.bloque-legal {
+  margin-bottom: 20px;
+  text-align: center;
 }
 
-#center {
+.link-legal {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.link-legal:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.overlay-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.modal-privacidad {
+  background: linear-gradient(160deg, #161616 0%, #0a0a0a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 28px 32px;
+  max-width: 560px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal-privacidad h2 {
+  margin-top: 0;
+  color: #f0f0f0;
+}
+
+.modal-privacidad h3 {
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+  color: #ccc;
+}
+
+.modal-privacidad p {
+  margin-top: 0;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  opacity: 0.8;
+}
+
+.modal-privacidad hr {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 16px 0;
+}
+
+.texto-confirmacion {
+  font-size: 0.85rem;
+  opacity: 0.65;
+}
+
+.boton-aceptar {
+  width: 100%;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: linear-gradient(160deg, #2a2a2a, #111);
+  color: #eee;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.boton-aceptar:hover {
+  background: linear-gradient(160deg, #333, #161616);
+}
+
+.form-agregar {
+  max-width: 500px;
+  margin: 0 auto 32px;
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  place-content: center;
-  place-items: center;
-  flex-grow: 1;
-
-  @media (max-width: 1024px) {
-    padding: 32px 20px 24px;
-    gap: 18px;
-  }
+  gap: 10px;
+  background: linear-gradient(160deg, #141414 0%, #0a0a0a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 6px 18px rgba(0, 0, 0, 0.5);
 }
 
-#next-steps {
+.form-agregar input[type="text"] {
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #050505;
+  color: #ddd;
+  font-size: 0.9rem;
+}
+
+.form-agregar button[type="submit"] {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(160deg, #2a2a2a, #0d0d0d);
+  color: #eee;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-agregar button[type="submit"]:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.error-alta {
+  color: #ff5c5c;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.cargando {
+  text-align: center;
+  color: #ccc;
+}
+
+.lista-jugadores {
   display: flex;
-  border-top: 1px solid var(--border);
-  text-align: left;
-
-  & > div {
-    flex: 1 1 0;
-    padding: 32px;
-    @media (max-width: 1024px) {
-      padding: 24px 20px;
-    }
-  }
-
-  .icon {
-    margin-bottom: 16px;
-    width: 22px;
-    height: 22px;
-  }
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    text-align: center;
-  }
+  flex-direction: column;
+  gap: 32px;
 }
 
-#docs {
-  border-right: 1px solid var(--border);
-
-  @media (max-width: 1024px) {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-}
-
-#next-steps ul {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  gap: 8px;
-  margin: 32px 0 0;
-
-  .logo {
-    height: 18px;
-  }
-
-  a {
-    color: var(--text-h);
-    font-size: 16px;
-    border-radius: 6px;
-    background: var(--social-bg);
-    display: flex;
-    padding: 6px 12px;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    transition: box-shadow 0.3s;
-
-    &:hover {
-      box-shadow: var(--shadow);
-    }
-    .button-icon {
-      height: 18px;
-      width: 18px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    margin-top: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-
-    li {
-      flex: 1 1 calc(50% - 8px);
-    }
-
-    a {
-      width: 100%;
-      justify-content: center;
-      box-sizing: border-box;
-    }
-  }
-}
-
-#spacer {
-  height: 88px;
-  border-top: 1px solid var(--border);
-  @media (max-width: 1024px) {
-    height: 48px;
-  }
-}
-
-.ticks {
+/* --- Tarjeta estilo "chapita militar" --- */
+.tarjeta-jugador {
   position: relative;
-  width: 100%;
+  background: linear-gradient(155deg, #1c1c1c 0%, #0d0d0d 55%, #050505 100%);
+  border: 1px solid rgba(200, 200, 200, 0.18);
+  border-radius: 10px 42px 10px 10px;
+  padding: 36px 24px 24px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 30px rgba(0, 0, 0, 0.4),
+    0 10px 28px rgba(0, 0, 0, 0.65);
+}
 
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    top: -4.5px;
-    border: 5px solid transparent;
-  }
+.tarjeta-jugador::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  right: 30px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #555, #0a0a0a 75%);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.5), inset 0 0 3px rgba(0, 0, 0, 0.9);
+}
 
-  &::before {
-    left: 0;
-    border-left-color: var(--border);
-  }
-  &::after {
-    right: 0;
-    border-right-color: var(--border);
+.tarjeta-jugador::after {
+  content: '';
+  position: absolute;
+  top: -14px;
+  right: 33.5px;
+  width: 6px;
+  height: 20px;
+  background-image: radial-gradient(circle, #999 34%, transparent 36%);
+  background-size: 6px 7px;
+  background-repeat: repeat-y;
+}
+
+.header-jugador {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.avatar-jugador {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid rgba(200, 200, 200, 0.3);
+}
+
+.header-jugador h2 {
+  margin: 0;
+  color: #f5f5f5;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 1.3rem;
+}
+
+.estado-plataformas {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  opacity: 0.6;
+  letter-spacing: 0.5px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 8px;
+}
+
+/* --- Sub-chapitas: Steam (plata) y FACEIT (dorado) --- */
+.bloque-steam,
+.bloque-faceit {
+  position: relative;
+  border-radius: 6px;
+  padding: 28px 18px 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), inset 0 -8px 16px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.bloque-steam {
+  background:
+    radial-gradient(circle at 20% 25%, rgba(190, 200, 210, 0.14), transparent 40%),
+    radial-gradient(circle at 72% 60%, rgba(120, 130, 140, 0.12), transparent 45%),
+    linear-gradient(160deg, #2c3034 0%, #16181a 55%, #0a0b0c 100%);
+  border: 1px solid rgba(190, 200, 210, 0.28);
+}
+
+.bloque-faceit {
+  background:
+    radial-gradient(circle at 25% 22%, rgba(255, 214, 130, 0.16), transparent 40%),
+    radial-gradient(circle at 75% 65%, rgba(180, 120, 40, 0.14), transparent 45%),
+    linear-gradient(160deg, #3a2e12 0%, #1c1608 55%, #0a0704 100%);
+  border: 1px solid rgba(222, 182, 92, 0.32);
+}
+
+.bloque-steam::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 16px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #d4dbe0, #5c6469 75%);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45);
+}
+
+.bloque-steam::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 18px;
+  width: 4px;
+  height: 14px;
+  background-image: radial-gradient(circle, #ccd3d8 34%, transparent 36%);
+  background-size: 4px 5px;
+  background-repeat: repeat-y;
+}
+
+.bloque-faceit::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 16px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffe6a8, #8a6a2b 75%);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.45);
+}
+
+.bloque-faceit::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 18px;
+  width: 4px;
+  height: 14px;
+  background-image: radial-gradient(circle, #ffdf9b 34%, transparent 36%);
+  background-size: 4px 5px;
+  background-repeat: repeat-y;
+}
+
+.bloque-steam h3,
+.bloque-faceit h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  color: #ddd;
+}
+
+.icono-titulo {
+  flex-shrink: 0;
+}
+
+.icono-steam {
+  color: #9fd4f7;
+}
+
+.icono-faceit {
+  color: #ffb45c;
+}
+
+.bloque-steam p,
+.bloque-faceit p {
+  margin: 5px 0;
+  text-align: left;
+  font-size: 0.86rem;
+  color: #c4c4c4;
+  line-height: 1.5;
+}
+
+.badges-faceit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.74rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, #262626, #0d0d0d);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: #ccc;
+  white-space: nowrap;
+  cursor: default;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+}
+
+.badge-racha {
+  background: linear-gradient(160deg, #3a1a05, #1a0a00);
+  border-color: rgba(255, 120, 0, 0.5);
+  color: #ffb066;
+}
+
+.badge-estilo {
+  background: linear-gradient(160deg, #10203a, #060d1a);
+  border-color: rgba(100, 150, 255, 0.4);
+  color: #9dbcff;
+}
+
+.badge-pais {
+  gap: 6px;
+}
+
+.badge-pais .fi {
+  border-radius: 2px;
+  width: 14px;
+  height: 14px;
+  background-size: cover;
+  flex-shrink: 0;
+}
+
+.footer-pagina {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.footer-pagina p {
+  margin: 4px 0;
+  font-size: 0.8rem;
+  opacity: 0.55;
+  color: #999;
+}
+
+.footer-nota {
+  opacity: 0.4 !important;
+}
+
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
   }
 }

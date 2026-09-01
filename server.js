@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const pool = require('./db');
-const { syncJugador } = require('./sync');
+const cron = require('node-cron');
+const { syncJugador, resolverVanityUrl, syncTodosLosJugadores } = require('./sync');
 require('dotenv').config();
 
 const app = express();
@@ -17,7 +18,9 @@ app.get('/api/jugadores', async (req, res) => {
              j.fecha_creacion_steam, j.ultima_conexion_steam,
              hs.faceit_nivel, hs.faceit_elo, hs.kd, hs.hs_pct, hs.winrate,
              hs.winrate_steam, hs.horas_jugadas, hs.vac_ban, hs.game_ban_count,
-             hs.kd_faceit, hs.hs_pct_faceit, hs.matches_faceit
+             hs.kd_faceit, hs.hs_pct_faceit, hs.matches_faceit,
+             hs.racha_actual, hs.mejor_racha, hs.mvps_promedio, hs.ranking_pais,
+             hs.mejor_mapa, hs.avatar_url, hs.pais_faceit
       FROM jugadores j
       LEFT JOIN LATERAL (
         SELECT * FROM historial_stats hs2
@@ -42,7 +45,9 @@ app.get('/api/jugadores/:id', async (req, res) => {
     const jugadorRes = await pool.query(`
       SELECT j.*, hs.faceit_nivel, hs.faceit_elo, hs.kd, hs.hs_pct, hs.winrate,
              hs.winrate_steam, hs.horas_jugadas, hs.vac_ban, hs.game_ban_count,
-             hs.kd_faceit, hs.hs_pct_faceit, hs.matches_faceit
+             hs.kd_faceit, hs.hs_pct_faceit, hs.matches_faceit,
+             hs.racha_actual, hs.mejor_racha, hs.mvps_promedio, hs.ranking_pais,
+             hs.mejor_mapa, hs.avatar_url, hs.pais_faceit
       FROM jugadores j
       LEFT JOIN LATERAL (
         SELECT * FROM historial_stats hs2
@@ -69,13 +74,22 @@ app.get('/api/jugadores/:id', async (req, res) => {
   }
 });
 
-// POST /api/jugadores -> dar de alta un jugador nuevo por SteamID64
+// POST /api/jugadores -> dar de alta un jugador nuevo por SteamID64 o vanity URL
 app.post('/api/jugadores', async (req, res) => {
   try {
-    const { steamId64 } = req.body;
-    if (!steamId64) {
-      return res.status(400).json({ error: 'Falta steamId64' });
+    let { steamId64, vanityUrl } = req.body;
+
+    if (!steamId64 && vanityUrl) {
+      steamId64 = await resolverVanityUrl(vanityUrl);
+      if (!steamId64) {
+        return res.status(404).json({ error: `No se encontró ningún perfil de Steam con el nombre "${vanityUrl}"` });
+      }
     }
+
+    if (!steamId64) {
+      return res.status(400).json({ error: 'Falta steamId64 o vanityUrl' });
+    }
+
     const resultado = await syncJugador(steamId64);
     res.status(201).json(resultado);
   } catch (err) {
@@ -83,7 +97,14 @@ app.post('/api/jugadores', async (req, res) => {
   }
 });
 
+// Sync automático 6 veces por día, cada 4 horas (hora de la PC)
+cron.schedule('0 0,4,8,12,16,20 * * *', () => {
+  console.log(`[Sync automático] Disparo programado de las ${new Date().toLocaleTimeString('es-AR')}`);
+  syncTodosLosJugadores();
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Backend corriendo en http://localhost:${PORT}`);
+  console.log('Sync automático programado para las 00, 04, 08, 12, 16 y 20 hs (mientras el backend esté corriendo)');
 });
