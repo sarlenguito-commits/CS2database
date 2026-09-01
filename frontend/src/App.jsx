@@ -1,8 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Gamepad2, Flame, Skull } from 'lucide-react';
 import './App.css';
 
 const API_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://cs2database-backend.onrender.com');
+
+const IMAGENES_FONDO = [
+  '/images/bg-warzone.jpg',
+  '/images/bg-warzone1.jpg',
+  '/images/bg-warzone2.jpg',
+  '/images/bg-warzone3.jpg',
+  '/images/bg-warzone4.jpg',
+  '/images/bg-warzone5.jpg',
+];
+const ALTURA_FRANJA = 800;
 
 function calcularEstiloJuego(horas, nivel) {
   if (!horas || !nivel) return null;
@@ -94,6 +104,23 @@ function ModalPrivacidad({ onAceptar }) {
   );
 }
 
+function FondoRepetido({ alturaPx }) {
+  const cantidadFranjas = Math.max(1, Math.ceil(alturaPx / ALTURA_FRANJA) + 1);
+  const franjas = Array.from({ length: cantidadFranjas }, (_, i) => IMAGENES_FONDO[i % IMAGENES_FONDO.length]);
+
+  return (
+    <div className="fondo-repetido" style={{ height: alturaPx }}>
+      {franjas.map((src, i) => (
+        <div
+          key={i}
+          className="franja-fondo"
+          style={{ backgroundImage: `url(${src})`, top: i * ALTURA_FRANJA }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function App() {
   const [jugadores, setJugadores] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -102,6 +129,8 @@ function App() {
   const [agregando, setAgregando] = useState(false);
   const [errorAlta, setErrorAlta] = useState(null);
   const [expandidos, setExpandidos] = useState({});
+  const [alturaPagina, setAlturaPagina] = useState(0);
+  const paginaRef = useRef(null);
 
   useEffect(() => {
     const yaAcepto = localStorage.getItem('cs2database_privacidad_aceptada');
@@ -130,6 +159,19 @@ function App() {
   useEffect(() => {
     cargarJugadores();
   }, []);
+
+  // Recalcula la altura real de la página cada vez que cambia el contenido
+  // (más jugadores, expandir "Ver más", etc.) para que el fondo repetido
+  // siempre cubra hasta el final, sin cortarse.
+  useLayoutEffect(() => {
+    if (!paginaRef.current) return;
+    const medir = () => setAlturaPagina(paginaRef.current.scrollHeight);
+    medir();
+
+    const observer = new ResizeObserver(medir);
+    observer.observe(paginaRef.current);
+    return () => observer.disconnect();
+  }, [jugadores, expandidos, cargando]);
 
   const toggleExpandido = (id) => {
     setExpandidos(prev => ({ ...prev, [id]: !prev[id] }));
@@ -167,7 +209,9 @@ function App() {
   };
 
   return (
-    <div className="pagina">
+    <div className="pagina" ref={paginaRef}>
+      <FondoRepetido alturaPx={alturaPagina} />
+
       {mostrarModal && <ModalPrivacidad onAceptar={handleAceptarModal} />}
 
       <h1>CS2database TNL</h1>
