@@ -130,7 +130,7 @@ function App() {
   const [errorAlta, setErrorAlta] = useState(null);
   const [expandidos, setExpandidos] = useState({});
   const [alturaPagina, setAlturaPagina] = useState(0);
-  const paginaRef = useRef(null);
+  const contenidoRef = useRef(null);
 
   useEffect(() => {
     const yaAcepto = localStorage.getItem('cs2database_privacidad_aceptada');
@@ -160,16 +160,17 @@ function App() {
     cargarJugadores();
   }, []);
 
-  // Recalcula la altura real de la página cada vez que cambia el contenido
-  // (más jugadores, expandir "Ver más", etc.) para que el fondo repetido
-  // siempre cubra hasta el final, sin cortarse.
+  // Mide la altura del CONTENIDO real (no del fondo) para saber cuántas
+  // franjas de fondo hacen falta. Importante: nunca medir un elemento que
+  // contenga al propio fondo, porque eso arma un loop infinito (medir ->
+  // crece el fondo -> vuelve a medir más grande -> crece de nuevo...).
   useLayoutEffect(() => {
-    if (!paginaRef.current) return;
-    const medir = () => setAlturaPagina(paginaRef.current.scrollHeight);
+    if (!contenidoRef.current) return;
+    const medir = () => setAlturaPagina(contenidoRef.current.scrollHeight);
     medir();
 
     const observer = new ResizeObserver(medir);
-    observer.observe(paginaRef.current);
+    observer.observe(contenidoRef.current);
     return () => observer.disconnect();
   }, [jugadores, expandidos, cargando]);
 
@@ -209,153 +210,155 @@ function App() {
   };
 
   return (
-    <div className="pagina" ref={paginaRef}>
+    <div className="pagina">
       <FondoRepetido alturaPx={alturaPagina} />
 
-      {mostrarModal && <ModalPrivacidad onAceptar={handleAceptarModal} />}
+      <div ref={contenidoRef}>
+        {mostrarModal && <ModalPrivacidad onAceptar={handleAceptarModal} />}
 
-      <h1>CS2database TNL</h1>
+        <h1>CS2database TNL</h1>
 
-      <div className="bloque-legal">
-        <button className="link-legal" onClick={() => setMostrarModal(true)}>
-          Ver política de privacidad
-        </button>
-      </div>
+        <div className="bloque-legal">
+          <button className="link-legal" onClick={() => setMostrarModal(true)}>
+            Ver política de privacidad
+          </button>
+        </div>
 
-      <form className="form-agregar" onSubmit={handleAgregarJugador}>
-        <input
-          type="text"
-          placeholder="Pegá la URL del perfil de Steam o el SteamID64"
-          value={inputUrl}
-          onChange={(e) => setInputUrl(e.target.value)}
-        />
-        <button type="submit" disabled={!inputUrl || agregando}>
-          {agregando ? 'Agregando...' : 'Agregar jugador'}
-        </button>
-        {errorAlta && <p className="error-alta">{errorAlta}</p>}
-      </form>
+        <form className="form-agregar" onSubmit={handleAgregarJugador}>
+          <input
+            type="text"
+            placeholder="Pegá la URL del perfil de Steam o el SteamID64"
+            value={inputUrl}
+            onChange={(e) => setInputUrl(e.target.value)}
+          />
+          <button type="submit" disabled={!inputUrl || agregando}>
+            {agregando ? 'Agregando...' : 'Agregar jugador'}
+          </button>
+          {errorAlta && <p className="error-alta">{errorAlta}</p>}
+        </form>
 
-      {cargando ? (
-        <p className="cargando">Cargando jugadores...</p>
-      ) : (
-        <div className="lista-jugadores">
-          {jugadores.map(j => {
-            const estiloJuego = calcularEstiloJuego(j.horas_jugadas, j.faceit_nivel);
+        {cargando ? (
+          <p className="cargando">Cargando jugadores...</p>
+        ) : (
+          <div className="lista-jugadores">
+            {jugadores.map(j => {
+              const estiloJuego = calcularEstiloJuego(j.horas_jugadas, j.faceit_nivel);
 
-            return (
-              <div key={j.id} className="tarjeta-jugador">
-                <div className="header-jugador">
-                  {j.avatar_url && (
-                    <img src={j.avatar_url} alt={j.faceit_nickname || j.steam_display_name} className="avatar-jugador" />
-                  )}
-                  <div>
-                    <h2>{j.steam_display_name}</h2>
-                    <p className="estado-plataformas">
-                      STEAM {j.steam_perfil_publico ? '✓' : '◐'} &nbsp;
-                      FACEIT {j.faceit_player_id ? '✓' : '✗'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="stats-grid">
-                  <div className="bloque-steam">
-                    <h3>
-                      <Gamepad2 size={16} className="icono-titulo icono-steam" />
-                      Steam
-                    </h3>
-                    <p>KD: {mostrarValor(j.kd)} | HS%: {mostrarValor(j.hs_pct, '%')}</p>
-                    <p>Winrate: {mostrarValor(j.winrate_steam, '%')}</p>
-                    <p>Horas jugadas: {mostrarValor(j.horas_jugadas)}</p>
-                    <p>Bans: {j.vac_ban ? 'VAC ban' : 'Ninguno'}</p>
-                    {j.fecha_creacion_steam && (
-                      <p>Cuenta creada: {new Date(j.fecha_creacion_steam).toLocaleDateString('es-AR')}</p>
+              return (
+                <div key={j.id} className="tarjeta-jugador">
+                  <div className="header-jugador">
+                    {j.avatar_url && (
+                      <img src={j.avatar_url} alt={j.faceit_nickname || j.steam_display_name} className="avatar-jugador" />
                     )}
-                    {j.ultima_conexion_steam && (
-                      <p>Última conexión: {new Date(j.ultima_conexion_steam).toLocaleDateString('es-AR')}</p>
-                    )}
+                    <div>
+                      <h2>{j.steam_display_name}</h2>
+                      <p className="estado-plataformas">
+                        STEAM {j.steam_perfil_publico ? '✓' : '◐'} &nbsp;
+                        FACEIT {j.faceit_player_id ? '✓' : '✗'}
+                      </p>
+                    </div>
                   </div>
 
-                  {j.faceit_player_id && (
-                    <div className="bloque-faceit">
+                  <div className="stats-grid">
+                    <div className="bloque-steam">
                       <h3>
-                        <Flame size={16} className="icono-titulo icono-faceit" />
-                        FACEIT
+                        <Gamepad2 size={16} className="icono-titulo icono-steam" />
+                        Steam
                       </h3>
+                      <p>KD: {mostrarValor(j.kd)} | HS%: {mostrarValor(j.hs_pct, '%')}</p>
+                      <p>Winrate: {mostrarValor(j.winrate_steam, '%')}</p>
+                      <p>Horas jugadas: {mostrarValor(j.horas_jugadas)}</p>
+                      <p>Bans: {j.vac_ban ? 'VAC ban' : 'Ninguno'}</p>
+                      {j.fecha_creacion_steam && (
+                        <p>Cuenta creada: {new Date(j.fecha_creacion_steam).toLocaleDateString('es-AR')}</p>
+                      )}
+                      {j.ultima_conexion_steam && (
+                        <p>Última conexión: {new Date(j.ultima_conexion_steam).toLocaleDateString('es-AR')}</p>
+                      )}
+                    </div>
 
-                      <div className="badges-faceit">
-                        <span className="badge">Nivel {mostrarValor(j.faceit_nivel || null)} · {mostrarValor(j.faceit_elo || null)} ELO</span>
-                        {j.ranking_pais > 0 && (
-                          <span className="badge badge-pais">
-                            {codigoPaisNormalizado(j.pais_faceit) && (
-                              <span className={`fi fi-${codigoPaisNormalizado(j.pais_faceit)}`}></span>
-                            )}
-                            {j.pais_faceit?.toUpperCase()} · #{j.ranking_pais}
-                          </span>
-                        )}
-                        {j.racha_actual > 0 && <span className="badge badge-racha">🔥 {j.racha_actual} seguidas</span>}
-                        {j.mejor_racha > 0 && <span className="badge">Racha máx: {j.mejor_racha}</span>}
-                        {estiloJuego && (
-                          <span
-                            className="badge badge-estilo"
-                            title="Calculado cruzando horas jugadas en Steam vs nivel de FACEIT"
-                          >
-                            Estilo: {estiloJuego}
-                          </span>
+                    {j.faceit_player_id && (
+                      <div className="bloque-faceit">
+                        <h3>
+                          <Flame size={16} className="icono-titulo icono-faceit" />
+                          FACEIT
+                        </h3>
+
+                        <div className="badges-faceit">
+                          <span className="badge">Nivel {mostrarValor(j.faceit_nivel || null)} · {mostrarValor(j.faceit_elo || null)} ELO</span>
+                          {j.ranking_pais > 0 && (
+                            <span className="badge badge-pais">
+                              {codigoPaisNormalizado(j.pais_faceit) && (
+                                <span className={`fi fi-${codigoPaisNormalizado(j.pais_faceit)}`}></span>
+                              )}
+                              {j.pais_faceit?.toUpperCase()} · #{j.ranking_pais}
+                            </span>
+                          )}
+                          {j.racha_actual > 0 && <span className="badge badge-racha">🔥 {j.racha_actual} seguidas</span>}
+                          {j.mejor_racha > 0 && <span className="badge">Racha máx: {j.mejor_racha}</span>}
+                          {estiloJuego && (
+                            <span
+                              className="badge badge-estilo"
+                              title="Calculado cruzando horas jugadas en Steam vs nivel de FACEIT"
+                            >
+                              Estilo: {estiloJuego}
+                            </span>
+                          )}
+                        </div>
+
+                        <p>KD: {mostrarValor(j.kd_faceit)} | HS%: {mostrarValor(j.hs_pct_faceit, '%')}</p>
+                        <p>Winrate: {mostrarValor(j.winrate, '%')} ({mostrarValor(j.matches_faceit)} partidas)</p>
+                        {j.mvps_promedio && <p>MVPs promedio: {j.mvps_promedio} por partida</p>}
+                        {j.ultima_partida_faceit && (
+                          <p>Última partida: {new Date(j.ultima_partida_faceit).toLocaleDateString('es-AR')}</p>
                         )}
                       </div>
+                    )}
+                  </div>
 
-                      <p>KD: {mostrarValor(j.kd_faceit)} | HS%: {mostrarValor(j.hs_pct_faceit, '%')}</p>
-                      <p>Winrate: {mostrarValor(j.winrate, '%')} ({mostrarValor(j.matches_faceit)} partidas)</p>
-                      {j.mvps_promedio && <p>MVPs promedio: {j.mvps_promedio} por partida</p>}
-                      {j.ultima_partida_faceit && (
-                        <p>Última partida: {new Date(j.ultima_partida_faceit).toLocaleDateString('es-AR')}</p>
+                  {j.armas && j.armas.filter(a => a.kills > 0).length > 0 && (
+                    <div className="seccion-expandible">
+                      <button
+                        className="boton-expandir"
+                        onClick={() => toggleExpandido(j.id)}
+                      >
+                        {expandidos[j.id] ? '▲ Ver menos' : '▼ Ver más'}
+                      </button>
+
+                      {expandidos[j.id] && (
+                        <div className="contenido-expandido">
+                          <h4>Armas favoritas</h4>
+                          <div className="top-armas">
+                            {j.armas
+                              .filter(a => a.kills > 0)
+                              .slice(0, 5)
+                              .map(a => (
+                                <span key={a.arma} className="badge-arma">
+                                  {a.arma.toUpperCase()}
+                                  <span className="kills-arma">
+                                    <Skull size={11} />
+                                    {a.kills} kills
+                                  </span>
+                                </span>
+                              ))}
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}
                 </div>
+              );
+            })}
+          </div>
+        )}
 
-                {j.armas && j.armas.filter(a => a.kills > 0).length > 0 && (
-                  <div className="seccion-expandible">
-                    <button
-                      className="boton-expandir"
-                      onClick={() => toggleExpandido(j.id)}
-                    >
-                      {expandidos[j.id] ? '▲ Ver menos' : '▼ Ver más'}
-                    </button>
-
-                    {expandidos[j.id] && (
-                      <div className="contenido-expandido">
-                        <h4>Armas favoritas</h4>
-                        <div className="top-armas">
-                          {j.armas
-                            .filter(a => a.kills > 0)
-                            .slice(0, 5)
-                            .map(a => (
-                              <span key={a.arma} className="badge-arma">
-                                {a.arma.toUpperCase()}
-                                <span className="kills-arma">
-                                  <Skull size={11} />
-                                  {a.kills} kills
-                                </span>
-                              </span>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      <footer className="footer-pagina">
-        <p>© {new Date().getFullYear()} Esteban Sarlengo · Todos los derechos reservados</p>
-        <p className="footer-nota">
-          Proyecto en mejora continua · Próximamente: buscador de grupo y armador de lobbys
-        </p>
-      </footer>
+        <footer className="footer-pagina">
+          <p>© {new Date().getFullYear()} Esteban Sarlengo · Todos los derechos reservados</p>
+          <p className="footer-nota">
+            Proyecto en mejora continua · Próximamente: buscador de grupo y armador de lobbys
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }
