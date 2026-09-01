@@ -4,9 +4,28 @@ body {
   background-color: #050505;
   background-image:
     linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.4) 60%, rgba(0, 0, 0, 0.7) 100%),
-    url('/images/bg-warzone.jpg');
-  background-size: 100% auto;
-  background-position: center top;
+    url('/images/bg-warzone.jpg'),
+    url('/images/bg-warzone1.jpg'),
+    url('/images/bg-warzone2.jpg'),
+    url('/images/bg-warzone3.jpg'),
+    url('/images/bg-warzone4.jpg'),
+    url('/images/bg-warzone5.jpg');
+  background-size:
+    100% 100%,
+    100% 800px,
+    100% 800px,
+    100% 800px,
+    100% 800px,
+    100% 800px,
+    100% 800px;
+  background-position:
+    center top,
+    center 0px,
+    center 800px,
+    center 1600px,
+    center 2400px,
+    center 3200px,
+    center 4000px;
   background-repeat: no-repeat;
 }
 
@@ -400,6 +419,74 @@ body {
   flex-shrink: 0;
 }
 
+.seccion-expandible {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.boton-expandir {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 6px 14px;
+  transition: all 0.15s ease;
+}
+
+.boton-expandir:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.contenido-expandido {
+  margin-top: 10px;
+}
+
+.contenido-expandido h4 {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #999;
+}
+
+.top-armas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.badge-arma {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: linear-gradient(160deg, rgba(255, 100, 40, 0.1), rgba(255, 100, 40, 0.02));
+  border: 1px solid rgba(255, 120, 60, 0.25);
+  color: #ffb88a;
+  letter-spacing: 0.5px;
+}
+
+.kills-arma {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: #999;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .footer-pagina {
   margin-top: 48px;
   padding-top: 20px;
@@ -408,10 +495,11 @@ body {
 }
 
 .footer-pagina p {
-  margin: 4px 0;
-  font-size: 0.8rem;
-  opacity: 0.55;
-  color: #999;
+  margin: 4px 25px;
+  font-size: 0.88rem;
+  font-weight: 3500;
+  color: #17acf1;
+  opacity: 0.9;
 }
 
 .footer-nota {

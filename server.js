@@ -20,7 +20,8 @@ app.get('/api/jugadores', async (req, res) => {
              hs.winrate_steam, hs.horas_jugadas, hs.vac_ban, hs.game_ban_count,
              hs.kd_faceit, hs.hs_pct_faceit, hs.matches_faceit,
              hs.racha_actual, hs.mejor_racha, hs.mvps_promedio, hs.ranking_pais,
-             hs.mejor_mapa, hs.avatar_url, hs.pais_faceit
+             hs.mejor_mapa, hs.avatar_url, hs.pais_faceit,
+             armasagg.armas
       FROM jugadores j
       LEFT JOIN LATERAL (
         SELECT * FROM historial_stats hs2
@@ -28,6 +29,12 @@ app.get('/api/jugadores', async (req, res) => {
         ORDER BY fecha_snapshot DESC
         LIMIT 1
       ) hs ON true
+      LEFT JOIN LATERAL (
+        SELECT json_agg(json_build_object('arma', arma, 'kills', kills_totales) ORDER BY kills_totales DESC) AS armas
+        FROM historial_armas ha
+        WHERE ha.jugador_id = j.id
+          AND ha.fecha_snapshot = (SELECT MAX(fecha_snapshot) FROM historial_armas WHERE jugador_id = j.id)
+      ) armasagg ON true
       WHERE j.activo = true
       ORDER BY j.steam_display_name
     `);

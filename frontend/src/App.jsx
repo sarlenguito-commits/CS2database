@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Gamepad2, Flame } from 'lucide-react';
+import { Gamepad2, Flame, Skull } from 'lucide-react';
 import './App.css';
 
 function calcularEstiloJuego(horas, nivel) {
@@ -13,6 +13,11 @@ function calcularEstiloJuego(horas, nivel) {
 function codigoPaisNormalizado(codigoPais) {
   if (!codigoPais || codigoPais.length !== 2) return null;
   return codigoPais.toLowerCase();
+}
+
+function mostrarValor(valor, sufijo = '') {
+  if (valor === null || valor === undefined) return '—';
+  return `${valor}${sufijo}`;
 }
 
 function extraerSteamId(input) {
@@ -94,6 +99,7 @@ function App() {
   const [inputUrl, setInputUrl] = useState('');
   const [agregando, setAgregando] = useState(false);
   const [errorAlta, setErrorAlta] = useState(null);
+  const [expandidos, setExpandidos] = useState({});
 
   useEffect(() => {
     const yaAcepto = localStorage.getItem('cs2database_privacidad_aceptada');
@@ -122,6 +128,10 @@ function App() {
   useEffect(() => {
     cargarJugadores();
   }, []);
+
+  const toggleExpandido = (id) => {
+    setExpandidos(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const handleAgregarJugador = async (e) => {
     e.preventDefault();
@@ -207,9 +217,9 @@ function App() {
                       <Gamepad2 size={16} className="icono-titulo icono-steam" />
                       Steam
                     </h3>
-                    <p>KD: {j.kd ?? 'N/D'} | HS%: {j.hs_pct ? `${j.hs_pct}%` : 'N/D'}</p>
-                    <p>Winrate: {j.winrate_steam ? `${j.winrate_steam}%` : 'N/D'}</p>
-                    <p>Horas jugadas: {j.horas_jugadas ?? 'N/D'}</p>
+                    <p>KD: {mostrarValor(j.kd)} | HS%: {mostrarValor(j.hs_pct, '%')}</p>
+                    <p>Winrate: {mostrarValor(j.winrate_steam, '%')}</p>
+                    <p>Horas jugadas: {mostrarValor(j.horas_jugadas)}</p>
                     <p>Bans: {j.vac_ban ? 'VAC ban' : 'Ninguno'}</p>
                     {j.fecha_creacion_steam && (
                       <p>Cuenta creada: {new Date(j.fecha_creacion_steam).toLocaleDateString('es-AR')}</p>
@@ -227,7 +237,7 @@ function App() {
                       </h3>
 
                       <div className="badges-faceit">
-                        <span className="badge">Nivel {j.faceit_nivel} · {j.faceit_elo} ELO</span>
+                        <span className="badge">Nivel {mostrarValor(j.faceit_nivel || null)} · {mostrarValor(j.faceit_elo || null)} ELO</span>
                         {j.ranking_pais > 0 && (
                           <span className="badge badge-pais">
                             {codigoPaisNormalizado(j.pais_faceit) && (
@@ -248,12 +258,43 @@ function App() {
                         )}
                       </div>
 
-                      <p>KD: {j.kd_faceit ?? 'N/D'} | HS%: {j.hs_pct_faceit ? `${j.hs_pct_faceit}%` : 'N/D'}</p>
-                      <p>Winrate: {j.winrate ? `${j.winrate}%` : 'N/D'} ({j.matches_faceit ?? '?'} partidas)</p>
+                      <p>KD: {mostrarValor(j.kd_faceit)} | HS%: {mostrarValor(j.hs_pct_faceit, '%')}</p>
+                      <p>Winrate: {mostrarValor(j.winrate, '%')} ({mostrarValor(j.matches_faceit)} partidas)</p>
                       {j.mvps_promedio && <p>MVPs promedio: {j.mvps_promedio} por partida</p>}
                     </div>
                   )}
                 </div>
+
+                {j.armas && j.armas.filter(a => a.kills > 0).length > 0 && (
+                  <div className="seccion-expandible">
+                    <button
+                      className="boton-expandir"
+                      onClick={() => toggleExpandido(j.id)}
+                    >
+                      {expandidos[j.id] ? '▲ Ver menos' : '▼ Ver más'}
+                    </button>
+
+                    {expandidos[j.id] && (
+                      <div className="contenido-expandido">
+                        <h4>Armas favoritas</h4>
+                        <div className="top-armas">
+                          {j.armas
+                            .filter(a => a.kills > 0)
+                            .slice(0, 5)
+                            .map(a => (
+                              <span key={a.arma} className="badge-arma">
+                                {a.arma.toUpperCase()}
+                                <span className="kills-arma">
+                                  <Skull size={11} />
+                                  {a.kills} kills
+                                </span>
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
