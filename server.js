@@ -20,13 +20,13 @@ app.get('/api/jugadores', async (req, res) => {
              hs.winrate_steam, hs.horas_jugadas, hs.vac_ban, hs.game_ban_count,
              hs.kd_faceit, hs.hs_pct_faceit, hs.matches_faceit,
              hs.racha_actual, hs.mejor_racha, hs.mvps_promedio, hs.ranking_pais,
-             hs.mejor_mapa, hs.avatar_url, hs.pais_faceit,
+             hs.mejor_mapa, hs.avatar_url, hs.pais_faceit, hs.ultima_partida_faceit,
              armasagg.armas
       FROM jugadores j
       LEFT JOIN LATERAL (
         SELECT * FROM historial_stats hs2
         WHERE hs2.jugador_id = j.id
-        ORDER BY fecha_snapshot DESC
+        ORDER BY id DESC
         LIMIT 1
       ) hs ON true
       LEFT JOIN LATERAL (
@@ -54,12 +54,12 @@ app.get('/api/jugadores/:id', async (req, res) => {
              hs.winrate_steam, hs.horas_jugadas, hs.vac_ban, hs.game_ban_count,
              hs.kd_faceit, hs.hs_pct_faceit, hs.matches_faceit,
              hs.racha_actual, hs.mejor_racha, hs.mvps_promedio, hs.ranking_pais,
-             hs.mejor_mapa, hs.avatar_url, hs.pais_faceit
+             hs.mejor_mapa, hs.avatar_url, hs.pais_faceit, hs.ultima_partida_faceit
       FROM jugadores j
       LEFT JOIN LATERAL (
         SELECT * FROM historial_stats hs2
         WHERE hs2.jugador_id = j.id
-        ORDER BY fecha_snapshot DESC
+        ORDER BY id DESC
         LIMIT 1
       ) hs ON true
       WHERE j.id = $1

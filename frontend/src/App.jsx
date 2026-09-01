@@ -263,6 +263,9 @@ function App() {
                       <p>KD: {mostrarValor(j.kd_faceit)} | HS%: {mostrarValor(j.hs_pct_faceit, '%')}</p>
                       <p>Winrate: {mostrarValor(j.winrate, '%')} ({mostrarValor(j.matches_faceit)} partidas)</p>
                       {j.mvps_promedio && <p>MVPs promedio: {j.mvps_promedio} por partida</p>}
+                      {j.ultima_partida_faceit && (
+                        <p>Última partida: {new Date(j.ultima_partida_faceit).toLocaleDateString('es-AR')}</p>
+                      )}
                     </div>
                   )}
                 </div>

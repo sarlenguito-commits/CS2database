@@ -72,6 +72,7 @@ async function syncJugador(steamId64) {
   let kdFaceit = null, hsPctFaceit = null, matchesFaceit = null;
   let avatarUrl = null, rachaActual = null, mejorRacha = null, mvpsPromedio = null, mejorMapa = null, rankingPais = null;
   let paisFaceit = null;
+  let ultimaPartidaFaceit = null;
 
   const faceitRes = await fetch(
     `https://open.faceit.com/data/v4/players?game=cs2&game_player_id=${steamId64}`,
@@ -126,6 +127,20 @@ async function syncJugador(steamId64) {
       }
     }
 
+    // Última partida jugada en FACEIT: se pide el historial con limit=1
+    // para traer solo la partida más reciente y su fecha de fin.
+    const historyRes = await fetch(
+      `https://open.faceit.com/data/v4/players/${faceitPlayerId}/history?game=cs2&limit=1`,
+      { headers: { Authorization: `Bearer ${process.env.FACEIT_API_KEY}` } }
+    );
+    if (historyRes.ok) {
+      const historyData = await historyRes.json();
+      const ultimaPartida = historyData.items?.[0];
+      if (ultimaPartida?.finished_at) {
+        ultimaPartidaFaceit = new Date(ultimaPartida.finished_at * 1000);
+      }
+    }
+
     const region = faceitData.games.cs2.region;
     const country = faceitData.country;
     if (region && country) {
@@ -155,10 +170,26 @@ async function syncJugador(steamId64) {
   );
   const jugadorId = jugadorResult.rows[0].id;
 
+  // Si este sync no pudo traer la última partida (falló el pedido a /history o
+  // el jugador no tiene FACEIT), no queremos pisar un dato bueno que ya
+  // teníamos guardado de un sync anterior. Buscamos el último valor conocido
+  // y lo reutilizamos en vez de guardar null.
+  if (ultimaPartidaFaceit === null) {
+    const previaRes = await pool.query(
+      `SELECT ultima_partida_faceit FROM historial_stats
+       WHERE jugador_id = $1 AND ultima_partida_faceit IS NOT NULL
+       ORDER BY fecha_snapshot DESC LIMIT 1`,
+      [jugadorId]
+    );
+    if (previaRes.rows.length > 0) {
+      ultimaPartidaFaceit = previaRes.rows[0].ultima_partida_faceit;
+    }
+  }
+
   await pool.query(
-    `INSERT INTO historial_stats (jugador_id, fecha_snapshot, faceit_nivel, faceit_elo, kd, hs_pct, winrate, winrate_steam, horas_jugadas, vac_ban, game_ban_count, kd_faceit, hs_pct_faceit, matches_faceit, racha_actual, mejor_racha, mvps_promedio, ranking_pais, mejor_mapa, avatar_url, pais_faceit)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
-    [jugadorId, fechaSnapshot, faceitNivel, faceitElo, kd, hsPct, winrateFaceit, winrateSteam, horasJugadas, bans.VACBanned, bans.NumberOfGameBans, kdFaceit, hsPctFaceit, matchesFaceit, rachaActual, mejorRacha, mvpsPromedio, rankingPais, mejorMapa, avatarUrl, paisFaceit]
+    `INSERT INTO historial_stats (jugador_id, fecha_snapshot, faceit_nivel, faceit_elo, kd, hs_pct, winrate, winrate_steam, horas_jugadas, vac_ban, game_ban_count, kd_faceit, hs_pct_faceit, matches_faceit, racha_actual, mejor_racha, mvps_promedio, ranking_pais, mejor_mapa, avatar_url, pais_faceit, ultima_partida_faceit)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+    [jugadorId, fechaSnapshot, faceitNivel, faceitElo, kd, hsPct, winrateFaceit, winrateSteam, horasJugadas, bans.VACBanned, bans.NumberOfGameBans, kdFaceit, hsPctFaceit, matchesFaceit, rachaActual, mejorRacha, mvpsPromedio, rankingPais, mejorMapa, avatarUrl, paisFaceit, ultimaPartidaFaceit]
   );
 
   for (const a of armas) {
