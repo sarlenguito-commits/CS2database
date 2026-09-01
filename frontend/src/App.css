@@ -42,13 +42,43 @@ body {
   background-repeat: no-repeat;
 }
 
-.pagina h1 {
-  text-align: center;
+.titulo-escalonado {
+  display: flex;
+  flex-direction: column;
   margin-bottom: 24px;
-  letter-spacing: 1px;
   text-transform: uppercase;
   color: #e8e8e8;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  font-size: 3rem;
+  line-height: 1.1;
+  letter-spacing: 2px;
+}
+
+.titulo-escalonado span:nth-child(1) {
+  align-self: flex-start;
+  margin-left: 0;
+}
+
+.titulo-escalonado span:nth-child(2) {
+  align-self: center;
+  margin-left: 6vw;
+}
+
+.titulo-escalonado span:nth-child(3) {
+  align-self: flex-end;
+  margin-left: 12vw;
+}
+
+@media (max-width: 640px) {
+  .titulo-escalonado {
+    font-size: 2rem;
+  }
+  .titulo-escalonado span:nth-child(2) {
+    margin-left: 3vw;
+  }
+  .titulo-escalonado span:nth-child(3) {
+    margin-left: 6vw;
+  }
 }
 
 .bloque-legal {
