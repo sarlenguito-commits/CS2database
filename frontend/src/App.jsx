@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Gamepad2, Flame, Skull } from 'lucide-react';
 import './App.css';
 
+const API_URL = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://cs2database-backend.onrender.com');
+
 function calcularEstiloJuego(horas, nivel) {
   if (!horas || !nivel) return null;
   const horasPorNivel = horas / nivel;
@@ -113,7 +115,7 @@ function App() {
 
   const cargarJugadores = () => {
     setCargando(true);
-    fetch('http://localhost:3001/api/jugadores')
+    fetch(`${API_URL}/api/jugadores`)
       .then(res => res.json())
       .then(data => {
         setJugadores(data);
@@ -147,7 +149,7 @@ function App() {
 
     setAgregando(true);
     try {
-      const res = await fetch('http://localhost:3001/api/jugadores', {
+      const res = await fetch(`${API_URL}/api/jugadores`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(steamId64 ? { steamId64 } : { vanityUrl }),
