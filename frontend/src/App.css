@@ -18,13 +18,16 @@ body {
 }
 
 /* --- Fondo repetido: franjas de 800px que ciclan las fotos disponibles
-   hasta cubrir toda la altura real de la página, sin cortarse --- */
+   hasta cubrir toda la altura real de la página, sin cortarse.
+   overflow: hidden recorta el sobrante de la última franja exacto donde
+   termina el contenido, para que no asome una imagen de más. --- */
 .fondo-repetido {
   position: absolute;
   top: 0;
   left: 50%;
   width: 100vw;
   transform: translateX(-50%);
+  overflow: hidden;
   z-index: -1;
   pointer-events: none;
 }

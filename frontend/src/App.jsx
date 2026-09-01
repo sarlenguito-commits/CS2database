@@ -105,7 +105,11 @@ function ModalPrivacidad({ onAceptar }) {
 }
 
 function FondoRepetido({ alturaPx }) {
-  const cantidadFranjas = Math.max(1, Math.ceil(alturaPx / ALTURA_FRANJA) + 1);
+  // Sin margen extra: se generan solo las franjas necesarias para cubrir
+  // la altura real, y el contenedor recorta (overflow: hidden, ver App.css)
+  // cualquier sobrante de la última franja para que corte justo donde
+  // termina el contenido, sin dejar una imagen de más asomando.
+  const cantidadFranjas = Math.max(1, Math.ceil(alturaPx / ALTURA_FRANJA));
   const franjas = Array.from({ length: cantidadFranjas }, (_, i) => IMAGENES_FONDO[i % IMAGENES_FONDO.length]);
 
   return (
