@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import { Gamepad2, Flame, Skull } from 'lucide-react';
 import './App.css';
 
@@ -13,6 +13,30 @@ const IMAGENES_FONDO = [
   '/images/bg-warzone5.jpg',
 ];
 const ALTURA_FRANJA = 800;
+
+const OPCIONES_ORDEN = [
+  { valor: 'nombre', etiqueta: 'Nombre (A-Z)' },
+  { valor: 'elo', etiqueta: 'Más ELO en FACEIT' },
+  { valor: 'horas', etiqueta: 'Más horas jugadas' },
+  { valor: 'reciente', etiqueta: 'Último ingresado a la base' },
+  { valor: 'antiguo', etiqueta: 'Primero en entrar a la base' },
+];
+
+function ordenarJugadores(lista, criterio) {
+  const copia = [...lista];
+  switch (criterio) {
+    case 'elo':
+      return copia.sort((a, b) => (b.faceit_elo ?? -Infinity) - (a.faceit_elo ?? -Infinity));
+    case 'horas':
+      return copia.sort((a, b) => (parseFloat(b.horas_jugadas) || 0) - (parseFloat(a.horas_jugadas) || 0));
+    case 'reciente':
+      return copia.sort((a, b) => b.id - a.id);
+    case 'antiguo':
+      return copia.sort((a, b) => a.id - b.id);
+    default:
+      return copia.sort((a, b) => a.steam_display_name.localeCompare(b.steam_display_name));
+  }
+}
 
 function calcularEstiloJuego(horas, nivel) {
   if (!horas || !nivel) return null;
@@ -134,6 +158,7 @@ function App() {
   const [errorAlta, setErrorAlta] = useState(null);
   const [expandidos, setExpandidos] = useState({});
   const [alturaPagina, setAlturaPagina] = useState(0);
+  const [ordenPor, setOrdenPor] = useState('nombre');
   const contenidoRef = useRef(null);
 
   useEffect(() => {
@@ -164,6 +189,11 @@ function App() {
     cargarJugadores();
   }, []);
 
+  const jugadoresOrdenados = useMemo(
+    () => ordenarJugadores(jugadores, ordenPor),
+    [jugadores, ordenPor]
+  );
+
   // Mide la altura del CONTENIDO real (no del fondo) para saber cuántas
   // franjas de fondo hacen falta. Importante: nunca medir un elemento que
   // contenga al propio fondo, porque eso arma un loop infinito (medir ->
@@ -176,7 +206,7 @@ function App() {
     const observer = new ResizeObserver(medir);
     observer.observe(contenidoRef.current);
     return () => observer.disconnect();
-  }, [jugadores, expandidos, cargando]);
+  }, [jugadores, expandidos, cargando, ordenPor]);
 
   const toggleExpandido = (id) => {
     setExpandidos(prev => ({ ...prev, [id]: !prev[id] }));
@@ -241,11 +271,26 @@ function App() {
           {errorAlta && <p className="error-alta">{errorAlta}</p>}
         </form>
 
+        {!cargando && jugadores.length > 0 && (
+          <div className="bloque-orden">
+            <label htmlFor="selector-orden">Ordenar por:</label>
+            <select
+              id="selector-orden"
+              value={ordenPor}
+              onChange={(e) => setOrdenPor(e.target.value)}
+            >
+              {OPCIONES_ORDEN.map(op => (
+                <option key={op.valor} value={op.valor}>{op.etiqueta}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {cargando ? (
           <p className="cargando">Cargando jugadores...</p>
         ) : (
           <div className="lista-jugadores">
-            {jugadores.map(j => {
+            {jugadoresOrdenados.map(j => {
               const estiloJuego = calcularEstiloJuego(j.horas_jugadas, j.faceit_nivel);
 
               return (

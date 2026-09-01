@@ -183,6 +183,38 @@ body {
   margin: 0;
 }
 
+/* --- Selector de orden de las tarjetas --- */
+.bloque-orden {
+  max-width: 500px;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bloque-orden label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bloque-orden select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #0d0d0d;
+  color: #ddd;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.bloque-orden select:focus {
+  outline: 1px solid rgba(255, 180, 92, 0.5);
+}
+
 .cargando {
   text-align: center;
   color: #ccc;
