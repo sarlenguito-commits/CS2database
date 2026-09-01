@@ -81,6 +81,25 @@ app.get('/api/jugadores/:id', async (req, res) => {
   }
 });
 
+// GET /api/jugadores/:id/historial-elo -> evolución de nivel/ELO de FACEIT en el tiempo
+app.get('/api/jugadores/:id/historial-elo', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(`
+      SELECT fecha_snapshot, faceit_nivel, faceit_elo
+      FROM historial_stats
+      WHERE jugador_id = $1
+        AND faceit_elo IS NOT NULL
+      ORDER BY fecha_snapshot ASC
+    `, [id]);
+
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/jugadores -> dar de alta un jugador nuevo por SteamID64 o vanity URL
 app.post('/api/jugadores', async (req, res) => {
   try {

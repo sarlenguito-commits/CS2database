@@ -168,7 +168,7 @@ function App() {
     <div className="pagina">
       {mostrarModal && <ModalPrivacidad onAceptar={handleAceptarModal} />}
 
-      <h1>CS2database</h1>
+      <h1>CS2database TNL</h1>
 
       <div className="bloque-legal">
         <button className="link-legal" onClick={() => setMostrarModal(true)}>
