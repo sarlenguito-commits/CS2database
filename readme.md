@@ -2,7 +2,7 @@
 
 Plataforma tipo CRM para el seguimiento de estadísticas de un grupo de jugadores de Counter-Strike 2, con sincronización automática desde las APIs oficiales de **FACEIT** y **Steam**.
 
-🔗 **Web en producción:** https://cs2database-frontend.onrender.com
+🔗 **Web en producción:** https://cs2databasetnl.onrender.com
 
 ---
 
@@ -82,7 +82,7 @@ El proyecto usa únicamente información pública expuesta por las APIs oficiale
 - [ ] Comparación histórica y matcheo de equipos
 
 
-- **Web en producción:** https://cs2database-frontend.onrender.com
+- **Web en producción:** https://cs2databasetnl.onrender.com
   
 
 ---
